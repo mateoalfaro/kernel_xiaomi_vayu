@@ -175,7 +175,8 @@ struct aio_kiocb {
 	union {
 		struct kiocb		rw;
 	};
-
+        
+        struct kiocb		common;
 	struct kioctx		*ki_ctx;
 	kiocb_cancel_fn		*ki_cancel;
 
@@ -597,7 +598,7 @@ static int kiocb_cancel(struct aio_kiocb *kiocb)
 		cancel = cmpxchg(&kiocb->ki_cancel, old, KIOCB_CANCELLED);
 	} while (cancel != old);
 
-	return cancel(&kiocb->rw);
+	return cancel(&kiocb->common);
 }
 
 /*
@@ -1102,6 +1103,7 @@ out:
  */
 static void aio_complete(struct aio_kiocb *iocb, long res, long res2)
 {
+        struct aio_kiocb *iocb = container_of(kiocb, struct aio_kiocb, common);
 	struct kioctx	*ctx = iocb->ki_ctx;
 	struct aio_ring	*ring;
 	struct io_event	*ev_page, *event;
